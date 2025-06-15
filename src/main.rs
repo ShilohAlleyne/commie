@@ -70,7 +70,8 @@ fn main() -> InquireResult<()> {
         "-s" => {
             let cmd = search_prompt(&commands, tags)?;
             // Run our searched command
-            run_command(cmd)?
+            run_command(cmd)?;
+            Ok(())
         }
         "-m" => {
             // Search
@@ -78,7 +79,10 @@ fn main() -> InquireResult<()> {
             // delete
             delete(&mut commands, cmd);
             // write the new-correct command
-            add_promt(&mut commands)?
+            add_promt(&mut commands)?;
+            // Save commands
+            save(&mut commands)?;
+            Ok(())
         }
         "-d" => {
             // Search
@@ -86,28 +90,24 @@ fn main() -> InquireResult<()> {
             let cmd_cmd = cmd.command.clone();
             // Delete the selected command
             delete(&mut commands, cmd);
+            println!("Deleted command: {}", cmd_cmd);
             // Save
             save(&mut commands)?;
-
-            println!("Deleted command: {}", cmd_cmd);
-            return Ok(());
+            Ok(())
         }
         "-a" => {
             // Add the new command
             add_promt(&mut commands)?;
             // Save commands
             save(&mut commands)?;
-
-            return Ok(());
+            Ok(())
         }
         _ => {
-            return Err(InquireError::InvalidConfiguration(
+            Err(InquireError::InvalidConfiguration(
                 "Incorrect Flag used".to_string(),
             ))
         }
-    };
-
-    Ok(())
+    }
 }
 
 fn search_prompt(commands: &[Cmd], tags: HashSet<String>) -> Result<Cmd, InquireError> {
@@ -253,7 +253,7 @@ fn save(cmds: &mut Vec<Cmd>) -> Result<(), InquireError> {
         .open(path)?;
     file.write_all(json.as_bytes())?;
 
-    println!("JSON saved successfully.");
+    println!("Successfully updated commands.");
 
     Ok(())
 }
