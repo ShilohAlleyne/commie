@@ -1,5 +1,5 @@
 {
-    description = "A very basic rust dev env flake";
+    description = "A very basic Rust dev env flake";
 
     inputs = {
         nixpkgs-stable.url = "github:NixOS/nixpkgs";
@@ -7,60 +7,48 @@
         flake-utils.url = "github:numtide/flake-utils";
     };
 
-    outputs = { self , nixpkgs-stable, nixpkgs-unstable, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
+    outputs = { self, nixpkgs-stable, nixpkgs-unstable, flake-utils }:
+    flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
         let
-            rust-overlay = (import (builtins.fetchTarball {
+            rust-overlay = import (builtins.fetchTarball {
                 url = "https://github.com/oxalica/rust-overlay/archive/master.tar.gz";
                 sha256 = "sha256:0vic9rv7p1yr390j0bq9df03glc37zqsx67msazsxz82114q5jgg";
-            }));
-            pkgs-stable = import nixpkgs-stable {
-                inherit system;
-                overlays = [ rust-overlay ];
-            };
-            pkgs-unstable = import nixpkgs-unstable {
+            });
+
+            pkgs = import nixpkgs-stable {
                 inherit system;
                 overlays = [ rust-overlay ];
             };
 
-            # Building nixpkgs
-            rustPackage = pkgs-stable.rustPlatform.buildRustPackage {
+            rustPackage = pkgs.rustPlatform.buildRustPackage {
                 pname = "commie";
+                version = "0.1.0";
                 src = ./.;
                 cargoLock = {
                     lockFile = ./Cargo.lock;
                 };
+                meta.mainProgram = "commie";
             };
         in
         {
-            devShells.default = pkgs-stable.mkShell {
+            devShells.default = pkgs.mkShell {
                 buildInputs = [
-                    (pkgs-stable.rust-bin.stable.latest.default.override {
-                        extensions = ["rust-src"];
+                    (pkgs.rust-bin.stable.latest.default.override {
+                        extensions = [ "rust-src" ];
                     })
-                    pkgs-stable.cargo
-                    pkgs-stable.rustup
+                    pkgs.cargo
+                    pkgs.rustup
                 ];
                 shellHook = ''
                     rustup component add rust-analyzer
                 '';
             };
 
-            # Build with nix
-            packages.${system} = {
-                commie = rustPackage;
-                default = rustPackage;
-            };
+            packages.default = rustPackage;
 
-            apps.${system} = {
-                commie = {
-                    type = "app";
-                    program = "${rustPackage}/bin/commie";
-                };
-                default = {
-                    type = "app";
-                    program = "${rustPackage}/bin/commie";
-                };
+            apps.default = {
+                type = "app";
+                program = pkgs.lib.getExe rustPackage;
             };
         }
     );
