@@ -24,8 +24,13 @@
             };
 
             # Building nixpkgs
-            crateMeta = builtins.fromTOML (builtins.readFile ./Cargo.toml);
-            crateName = crateMeta.package.name;
+            rustPackage = pkgs-stable.rustPlatform.buildRustPackage {
+                pname = "commie";
+                src = ./.;
+                cargoLock = {
+                    lockFile = ./Cargo.lock;
+                };
+            };
         in
         {
             devShells.default = pkgs-stable.mkShell {
@@ -42,20 +47,21 @@
             };
 
             # Build with nix
-            packages.${system}.${crateName} = pkgs-stable.rustPlatform.buildRustPackage {
-                src = ./.;
-                cargoLock = {
-                    lockFile = ./Cargo.lock;
+            packages.${system} = {
+                commie = rustPackage;
+                default = rustPackage;
+            };
+
+            apps.${system} = {
+                commie = {
+                    type = "app";
+                    program = "${rustPackage}/bin/commie";
+                };
+                default = {
+                    type = "app";
+                    program = "${rustPackage}/bin/commie";
                 };
             };
-            packages.${system}.default = self.packages.${system}.${crateName};
-
-
-            apps.${system}.${crateName} = {
-                type = "app";
-                program = "${self.packages.${system}.${crateName}}/bin/${crateName}";
-            };
-            apps.${system}.default = self.apps.${system}.${crateName};
         }
     );
 }
