@@ -48,11 +48,14 @@
                     lockFile = ./Cargo.lock;
                 };
             };
+            packages.${system}.default = self.packages.${system}.${crateName};
+
 
             apps.${system}.${crateName} = {
                 type = "app";
                 program = "${self.packages.${system}.${crateName}}/bin/${crateName}";
             };
+            apps.${system}.default = self.apps.${system}.${crateName};
         }
     );
 }
