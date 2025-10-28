@@ -2,6 +2,7 @@
 name = "commie"
 version = "0.1.0"
 edition = "2021"
+description = "A extremely simple cli command helper"
 
 [dependencies]
 colored = "3.0.0"
